@@ -19,7 +19,7 @@ app = dash.Dash(__name__,
 server = app.server
 app.title = "Predictive Maintenance Dashboard"
 
-df = pd.read_csv('../../../../../GitHub/dash-predictive-maintenance/data/SCADA_data.csv')
+df = pd.read_csv('data/SCADA_data.csv')
 df = df.set_index('Time')
 
 app.layout = html.Div([
