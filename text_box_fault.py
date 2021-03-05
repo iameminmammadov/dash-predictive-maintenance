@@ -30,7 +30,8 @@ df = df.set_index("Time")
 
 app.layout = html.Div(
     [
-        dcc.Textarea(id="Main-TextArea", persistence=True, persistence_type="local"),
+        dcc.Textarea(id="Features-Information-Text", persistence=True, persistence_type="local"),
+        dcc.Textarea(id="Faults-Information-Text", persistence=True, persistence_type="local"),
         html.Div(
             [
                 dcc.Dropdown(
@@ -49,16 +50,30 @@ app.layout = html.Div(
 column_description = {
     "WEC: ava. windspeed": "Average Windspeed",
     "WEC : max. windspeed": "Maximum Windspeed",
-    "WEC: ava. Rotation": "Average rotation",
+    "WEC: ava. Rotation": "Average rotation of something",
 }
 
 
-@app.callback(Output("Main-TextArea", "value"), [Input("dropdown", "value")])
+
+@app.callback(Output("Features-Information-Text", "value"),
+              [Input("dropdown", "value")])
 def update_text(selected_column):
     if selected_column in list(df):
+        # Connect the selected column with the key and display the value as the
+        # information.
         return "You chose the following column: \n{}".format(selected_column)
     else:
-        return "Nothing to display so far"
+        return "Choose variable to get the detailed information about the feature."
+
+# @app.callback(Output("Faults-Information-Text", "value"),
+#               # [Input should be if Error>0])
+# def update_text(selected_column):
+#     if selected_column in list(df):
+#         # Connect the selected column with the key and display the value as the
+#         # information.
+#         return "You chose the following column: \n{}".format(selected_column)
+#     else:
+#         return "Choose variable to get the detailed information about the feature."
 
 
 if __name__ == "__main__":
