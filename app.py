@@ -8,7 +8,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
 import plotly.graph_objs as go
-import plotly.express as px
+from datetime import datetime, date
 import dash_daq as daq
 from dash.dependencies import Input, Output, State
 
@@ -19,6 +19,17 @@ app = dash.Dash(
 )
 server = app.server
 app.title = "Predictive Maintenance Dashboard"
+
+# Load data
+df = pd.read_csv("data/SCADA_data.csv")
+df['Time'] = pd.to_datetime(df['Time'], dayfirst=True, errors='coerce')
+first_date = df['Time'].iloc[0]
+last_date = df['Time'].iloc[-1]
+
+
+# df = df.set_index("Time")
+# first_date = df.index[0]
+# last_date = df.index[-1]
 
 
 def Header(name, app):
@@ -73,22 +84,17 @@ reactive_power_display = dbc.Card(
     ],
 )
 
-df = pd.read_csv("data/SCADA_data.csv")
-df = df.set_index("Time")
-
-
-app.layout = dbc.Container(
-    [
-        Header("Predictive Maintenance for Wind Farms Dashboard", app),
-        html.Hr(),
-        dbc.Row(
+graphs = dbc.Card(
+    className="mt-auto",
+    children=[
+        dbc.CardBody(
             [
                 html.Div(
                     [
                         html.Div(
                             [
                                 dcc.Graph(
-                                    id="Main-Graph",
+                                    id="Main-Graph", config={"displayModeBar": False}
                                 ),
                             ],
                             style={"width": "98%", "display": "inline-block"},
@@ -111,21 +117,166 @@ app.layout = dbc.Container(
                     ]
                 )
             ]
-        ),
+        )
+    ],
+)
+
+date_selector = dbc.Card(
+    className="mt-auto",
+    children=[
+        html.Div(
+            [
+                dcc.DatePickerRange(
+                    id="date-picker",
+                    min_date_allowed=date(2014, 5, 1),
+                    max_date_allowed=date(2015, 4, 9),
+                    initial_visible_month=date(2014, 5, 1),
+                    start_date_placeholder_text="Start Period",
+                    end_date_placeholder_text="End Period",
+                    calendar_orientation="vertical"
+                ),
+                html.Div(id="output-container-date-picker-range"),
+            ]
+        )
+    ],
+)
+
+app.layout = dbc.Container(
+    [
+        Header("Predictive Maintenance for Wind Farms Dashboard", app),
+        html.Hr(),
+        graphs,
+        html.Hr(),
+        dbc.Row([date_selector]),
         html.Hr(),
         dbc.Row([active_power_display, reactive_power_display]),
-
     ]
 )
 
 
-@app.callback(Output("Main-Graph", "figure"), [Input("dropdown", "value")])
-def update_graph(selected_column):
+@app.callback(Output("Main-Graph", "figure"),
+              [Input("dropdown", "value"),
+               Input('date-picker', 'start_date'),
+               Input('date-picker', 'end_date')])
+def update_graph(selected_column, start_date, end_date):
     if selected_column in list(df):
-        return go.Figure(data=[go.Scatter(x=df.index, y=df[selected_column])])
+        if start_date and end_date:
+            start_date_object = datetime.strptime(start_date, '%Y-%m-%d')
+            end_date_object = datetime.strptime(end_date, '%Y-%m-%d')
+            mask = (df['Time'] > start_date_object) & (df['Time'] <= end_date_object)
+            df_within_dates = df.loc[mask]
+            fig = go.Figure(data=[go.Scatter(x=df_within_dates['Time'],
+                                             y=df_within_dates[selected_column])])
+            fig.update_layout(
+                xaxis=dict(
+                    showline=True,
+                    showgrid=False,
+                    showticklabels=True,
+                    linecolor='rgb(204, 204, 204)',
+                    linewidth=2,
+                    ticks='outside',
+                    tickfont=dict(
+                        family='Arial',
+                        size=12,
+                        color='rgb(82, 82, 82)',
+                    ),
+                ),
+                yaxis=dict(
+                    showgrid=False,
+                    zeroline=False,
+                    showline=False,
+                    showticklabels=False,
+                ),
+                autosize=False,
+                margin=dict(
+                    autoexpand=False,
+                    l=100,
+                    r=20,
+                    t=110,
+                ),
+                showlegend=False,
+                plot_bgcolor='white'
+            )
+            return fig
+        elif start_date:
+            start_date_object = datetime.strptime(start_date, '%Y-%m-%d')
+            mask = (df['Time'] > start_date_object)
+            df_within_dates = df.loc[mask]
+            fig = go.Figure(data=[go.Scatter(x=df_within_dates['Time'],
+                                             y=df_within_dates[selected_column])])
+            fig.update_layout(
+                xaxis=dict(
+                    showline=True,
+                    showgrid=False,
+                    showticklabels=True,
+                    linecolor='rgb(204, 204, 204)',
+                    linewidth=2,
+                    ticks='outside',
+                    tickfont=dict(
+                        family='Arial',
+                        size=12,
+                        color='rgb(82, 82, 82)',
+                    ),
+                ),
+                yaxis=dict(
+                    showgrid=False,
+                    zeroline=False,
+                    showline=False,
+                    showticklabels=False,
+                ),
+                autosize=False,
+                margin=dict(
+                    autoexpand=False,
+                    l=100,
+                    r=20,
+                    t=110,
+                ),
+                showlegend=False,
+                plot_bgcolor='white'
+            )
+            return fig
+        else:
+            fig = go.Figure(data=[go.Scatter(x=df['Time'], y=df[selected_column])])
+            fig.update_layout(
+                xaxis=dict(
+                    showline=True,
+                    showgrid=False,
+                    showticklabels=True,
+                    linecolor='rgb(204, 204, 204)',
+                    linewidth=2,
+                    ticks='outside',
+                    tickfont=dict(
+                        family='Arial',
+                        size=12,
+                        color='rgb(82, 82, 82)',
+                    ),
+                ),
+                yaxis=dict(
+                    showgrid=False,
+                    zeroline=False,
+                    showline=False,
+                    showticklabels=False,
+                ),
+                autosize=False,
+                margin=dict(
+                    autoexpand=False,
+                    l=100,
+                    r=20,
+                    t=110,
+                ),
+                showlegend=False,
+                plot_bgcolor='white'
+            )
+            return fig
     else:
         return {}
 
 
 if __name__ == "__main__":
     app.run_server(debug=True, use_reloader=True)
+
+"""
+References:
+https://stackoverflow.com/questions/66027814/plotly-dash-embed-indicator-graph-inside-of-a-dbc-card
+https://plotlydash.com/pie-chart-with-drop-down-list-and-date-picker-range-in-plotly-dash/
+"""
