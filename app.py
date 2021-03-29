@@ -250,13 +250,11 @@ active_power_display = dbc.Card(
                         max=max(df['WEC: ava. Power']),  # This one should be the theoretical maximum
                         value=100,
                         showCurrentValue=True,
-                        # size=180,
                         color="#fec036",
                         style={
                             "marginTop": "5%",
                             "marginBottom": "-10%",
                         },
-                        # scale={'custom': {"font-size": "30px"}}
                     ),
                     style={
                         "backgroundColor": "black",
