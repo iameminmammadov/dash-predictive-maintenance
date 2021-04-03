@@ -7,13 +7,15 @@ import dash_html_components as html
 import dash_daq as daq
 
 import plotly.graph_objs as go
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
 from datetime import datetime, date
+from data_preprocessing import data_preprocessing
+import pickle
 
 app = dash.Dash(
     __name__,
     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
-    external_stylesheets=[dbc.themes.SUPERHERO],  # SLATE
+    external_stylesheets=[dbc.themes.SUPERHERO],
 )
 server = app.server
 app.title = "Predictive Maintenance Dashboard"
@@ -21,12 +23,18 @@ app.title = "Predictive Maintenance Dashboard"
 
 def logo(app):
     title = html.H5(
-        "PREDICTIVE MAINTENANCE DASHBOARD FOR WIND TURBINES", style={"margin-top": 5}
+        "PREDICTIVE MAINTENANCE DASHBOARD FOR WIND TURBINES",
+        style={"marginTop": 5,
+               'marginLeft': '10px'
+               }
     )
+
     info_about_app = html.H6(
         "This Dashboard is focused on estimating the Remaining Useful Life (RUL) in wind turbines. RUL is defined "
-        " as the time until the next fault."
+        " as the time until the next fault.",
+        style={"marginLeft": "10px"}
     )
+
     logo_image = html.Img(
         src=app.get_asset_url("dash-logo.png"), style={"float": "right", "height": 50}
     )
@@ -37,13 +45,7 @@ def logo(app):
     )
 
 
-df = pd.read_csv("data/scada_data.csv")
-df['Time'] = pd.to_datetime(df['Time'], dayfirst=True, errors='coerce')  # May, 1 until March, 12
-df.sort_values(by="Time", axis=0, inplace=True)
-df.reset_index(drop=True, inplace=True)
-
-first_date = df["Time"].iloc[0]
-last_date = df["Time"].iloc[0]
+df, df_button, x_test, y_test = data_preprocessing()
 
 predict_button = dbc.Card(
     className="mt-auto",
@@ -55,14 +57,22 @@ predict_button = dbc.Card(
                         dbc.Button(
                             "Predict",
                             id="predict-button",
-                            outline=True,
-                            color="Primary",
-                            size="md",
+                            color="#fec036",
+                            size="lg",
+                            style={"color": "#fec036"}
                         ),
                     ]
                 )
             ],
-            style={"text-align": "center"},
+            style={"text-align": "center",
+                   "backgroundColor": "black",
+                   "border-radius": "1px",
+                   "border-width": "5px",
+                   "border-top": "1px solid rgb(216, 216, 216)",
+                   "border-left": "1px solid rgb(216, 216, 216)",
+                   "border-right": "1px solid rgb(216, 216, 216)",
+                   "border-bottom": "1px solid rgb(216, 216, 216)",
+                   },
         )
     ],
 )
@@ -77,15 +87,22 @@ get_new_information_button = dbc.Card(
                         dbc.Button(
                             "Get New Data",
                             id="get-new-info-button",
-                            outline=True,
-                            color="Primary",
-                            size="md",
-                            className="mr-1",
-                        )
+                            color="#fec036",
+                            size="lg",
+                            style={"color": "#fec036"}
+                        ),
                     ]
                 )
             ],
-            style={"text-align": "center"},
+            style={"text-align": "center",
+                   "backgroundColor": "black",
+                   "border-radius": "1px",
+                   "border-width": "5px",
+                   "border-top": "1px solid rgb(216, 216, 216)",
+                   "border-left": "1px solid rgb(216, 216, 216)",
+                   "border-right": "1px solid rgb(216, 216, 216)",
+                   "border-bottom": "1px solid rgb(216, 216, 216)",
+                   },
         )
     ],
 )
@@ -107,8 +124,8 @@ graphs = dbc.Card(
                                         "showline": False,
                                     },
                                     "yaxis": {"showgrid": False, "showline": False},
-                                    "plot_bgcolor": "#2b2b2b",
-                                    "paper_bgcolor": "#2b2b2b",
+                                    "plot_bgcolor": "black",
+                                    "paper_bgcolor": "black",
                                     "font": {"color": "gray"},
                                 },
                             },
@@ -155,9 +172,14 @@ graphs = dbc.Card(
                         "right": "3%",
                         "float": "right",
                         "display": "inline-block",
+                        "color": "black"
                     },
                 ),
             ],
+            style={"backgroundColor": "black",
+                   "border-radius": "1px",
+                   "border-width": "5px",
+                   "border-top": "1px solid rgb(216, 216, 216)"},
         )
     ]
 )
@@ -165,42 +187,41 @@ graphs = dbc.Card(
 rul_estimation_indicator = dbc.Card(
     children=[
         dbc.CardHeader("System RUL Estimation (days)",
-                       style={"text-align": "center"}, ),
+                       style={"text-align": "center",
+                              "color": "white",
+                              "backgroundColor": "black",
+                              "border-radius": "1px",
+                              "border-width": "5px",
+                              "border-top": "1px solid rgb(216, 216, 216)"
+                              },
+                       ),
         dbc.CardBody(
             [
                 daq.LEDDisplay(
-                    id='rul_estimation_indicator"',
+                    id="rul-estimation-indicator-led",
                     size=24,
                     color="#fec036",
                     style={"color": "#black"},
                     backgroundColor="#2b2b2b",
-                    value="1234.56",
+                    value="12345.67",
                 )
             ],
-            style={"text-align": "center"},
+            style={"text-align": "center",
+                   "backgroundColor": "black",
+                   "border-radius": "1px",
+                   "border-width": "5px",
+                   "border-top": "1px solid rgb(216, 216, 216)"},
         ),
     ]
 )
 
-"""
-message = dbc.FormGroup([dbc.Label("Message", html_for="example-message-row", width=2)
-                    ,dbc.Col(dbc.Textarea(id = "example-message-row"
-                                        , className="mb-3"
-                                        , placeholder="Enter message"
-                                        , required = True)
-                            , width=10)
-                ], row=True)
-"""
-
 info_box = dbc.Card(
-    className="mt_auto",
     children=[
         dbc.CardBody(
             [
                 html.Div(
                     dcc.Textarea(
                         id="Info-Textbox",
-                        # className="mb-3",
                         placeholder="This field is used to display information about a feature displayed "
                                     "on the graph and estimated RUL. In order to estimate the RUL, use "
                                     "the button 'Get New Data' and then, 'Predict'. The estimated RUL will be "
@@ -209,38 +230,79 @@ info_box = dbc.Card(
                         style={
                             "width": "100%",
                             "height": "100%",
-                            "background-color": "#20304C",
-                            "color": "red",
-                            "placeholder": "red",
+                            "background-color": "black",
+                            "color": "#fec036",
+                            "placeholder": "#fec036",
                             "fontFamily": "Arial",
                             "fontSize": "16",
-                            "display": "inline-block",
+                            # "display": "inline-block",
                         },
                     )
                 )
-            ]
-        )
+            ],
+            style={"backgroundColor": "black",
+                   "border-radius": "1px",
+                   "border-width": "5px",
+                   "border-top": "1px solid rgb(216, 216, 216)"},
+        ),
     ],
 )
 
-# https://stackoverflow.com/questions/57433300/how-to-adjust-the-margins-in-plotly-dash-daq-components
-# daq.Gauge(
-#         color={'ranges':{'red':[0,2.5],'green':[2.5,10]}},
-#         value=2,
-#         label={'label':'FUEL', 'style':{'font-size':'30px'}},
-#         max=10,
-#         min=0,
-#         scale={'custom':{'0':{'label':'E', 'style':{'font-size':'30px'}},
-#                          '5':{'label':'1/2', 'style':{'font-size':'30px'}},
-#                          '10':{'label':'F', 'style':{'font-size':'30px'}},
-#                         }
-#               }
-#     ),
+blade_angle_display = dbc.Card(
+    children=[
+        dbc.CardHeader("Blade Angle",
+                       style={"text-align": "center",
+                              "color": "white",
+                              "backgroundColor": "black",
+                              "border-radius": "1px",
+                              "border-width": "5px",
+                              "border-top": "1px solid rgb(216, 216, 216)"
+                              },
+                       ),
+        dbc.CardBody(
+            [
+                html.Div(
+                    daq.Gauge(
+                        id="blade-angle-information-gauge",
+                        min=min(df['WEC: ava. blade angle A']),
+                        max=max(df['WEC: ava. blade angle A']),  # This one should be the theoretical maximum
+                        value=100,
+                        showCurrentValue=True,
+                        color="#fec036",
+                        style={
+                            "display": "flex",
+                            "marginTop": "5%",
+                            "marginBottom": "-10%",
+                        },
+                    ),
+                    style={
+                        "display": "flex",
+                        "backgroundColor": "black",
+                        "border-radius": "1px",
+                        "border-width": "5px",
+                    },
+                )
+            ],
+            style={"backgroundColor": "black",
+                   "border-radius": "1px",
+                   "border-width": "5px",
+                   "border-top": "1px solid rgb(216, 216, 216)"},
+        ),
+    ],
+    style={'height': '95%'}
+)
 
 active_power_display = dbc.Card(
     children=[
         dbc.CardHeader("Active Power [kW]",
-                       style={"text-align": "center"}),
+                       style={"text-align": "center",
+                              "color": "white",
+                              "backgroundColor": "black",
+                              "border-radius": "1px",
+                              "border-width": "5px",
+                              "border-top": "1px solid rgb(216, 216, 216)"
+                              }
+                       ),
         dbc.CardBody(
             [
                 html.Div(
@@ -252,27 +314,39 @@ active_power_display = dbc.Card(
                         showCurrentValue=True,
                         color="#fec036",
                         style={
+                            "display": "flex",
                             "marginTop": "5%",
                             "marginBottom": "-10%",
                         },
                     ),
                     style={
+                        "display": "flex",
                         "backgroundColor": "black",
                         "border-radius": "1px",
                         "border-width": "5px",
-                        "border-top": "1px solid rgb(216, 216, 216)",
                     },
                 )
             ],
+            style={"backgroundColor": "black",
+                   "border-radius": "1px",
+                   "border-width": "5px",
+                   "border-top": "1px solid rgb(216, 216, 216)"},
         ),
     ],
+    style={'height': '95%'}
 )
 
 active_power_from_wind_display = dbc.Card(
     children=[
         dbc.CardHeader("Active Power Available\n from Wind [kW]",
                        style={"text-align": "center",
-                              "display": "flex"}),
+                              "color": "white",
+                              "backgroundColor": "black",
+                              "border-radius": "1px",
+                              "border-width": "5px",
+                              "border-top": "1px solid rgb(216, 216, 216)"
+                              }
+                       ),
         dbc.CardBody(
             [
                 html.Div(
@@ -289,26 +363,35 @@ active_power_from_wind_display = dbc.Card(
                             "marginBottom": "-10%",
                         },
                     ),
-                    className="m-auto",
                     style={
                         "display": "flex",
                         "backgroundColor": "black",
                         "border-radius": "1px",
                         "border-width": "5px",
-                        "border-top": "1px solid rgb(216, 216, 216)",
                     },
                 )
-            ], className="d-flex",
-
+            ],
+            style={"backgroundColor": "black",
+                   "border-radius": "1px",
+                   "border-width": "5px",
+                   "border-top": "1px solid rgb(216, 216, 216)"},
         ),
     ],
+    style={'height': '95%'}
 )
 
 wind_speed_information = dbc.Card(
     className="mt-auto",
     children=[
         dbc.CardHeader("Wind Speed [m/s]",
-                       style={"text-align": "center"}),
+                       style={"text-align": "center",
+                              "color": "white",
+                              "backgroundColor": "black",
+                              "border-radius": "1px",
+                              "border-width": "5px",
+                              "border-top": "1px solid rgb(216, 216, 216)"
+                              }
+                       ),
         dbc.CardBody(
             [
                 html.Div(
@@ -320,27 +403,40 @@ wind_speed_information = dbc.Card(
                         showCurrentValue=True,
                         color="#fec036",
                         style={
+                            "display": "flex",
                             "marginTop": "5%",
                             "marginBottom": "-10%",
                         },
                     ),
                     style={
+                        "display": "flex",
                         "backgroundColor": "black",
                         "border-radius": "1px",
                         "border-width": "5px",
-                        "border-top": "1px solid rgb(216, 216, 216)",
                     },
                 )
             ],
+            style={"backgroundColor": "black",
+                   "border-radius": "1px",
+                   "border-width": "5px",
+                   "border-top": "1px solid rgb(216, 216, 216)"},
         ),
     ],
+    style={'height': '95%'}
 )
 
 reactive_power_display = dbc.Card(
     className="mt-auto",
     children=[
         dbc.CardHeader("Reactive Power [kVAR]",
-                       style={"text-align": "center"}),
+                       style={"text-align": "center",
+                              "color": "white",
+                              "backgroundColor": "black",
+                              "border-radius": "1px",
+                              "border-width": "5px",
+                              "border-top": "1px solid rgb(216, 216, 216)"
+                              }
+                       ),
         dbc.CardBody(
             [
                 html.Div(
@@ -352,21 +448,26 @@ reactive_power_display = dbc.Card(
                         showCurrentValue=True,
                         color="#fec036",
                         style={
+                            "display": "flex",
                             "marginTop": "5%",
                             "marginBottom": "-10%",
-                            "display": "flex"
                         },
                     ),
                     style={
+                        "display": "flex",
                         "backgroundColor": "black",
                         "border-radius": "1px",
                         "border-width": "5px",
-                        "border-top": "1px solid rgb(216, 216, 216)",
                     },
                 )
             ],
+            style={"backgroundColor": "black",
+                   "border-radius": "1px",
+                   "border-width": "5px",
+                   "border-top": "1px solid rgb(216, 216, 216)"},
         ),
     ],
+    style={'height': '95%'}
 )
 
 app.layout = dbc.Container(
@@ -384,289 +485,220 @@ app.layout = dbc.Container(
                         dbc.Row(dbc.Col(predict_button, width=12)),
                     ]
                 ),
-            ]
+            ],
+            style={
+                "display": "flex",
+                "marginBottom": "-3%",
+            },
         ),
         dbc.Row(
             [
-                dbc.Col(active_power_display, width="auto", style={"height": "100%"}),
-                dbc.Col(active_power_from_wind_display, width="auto", style={"height": "100%"}),
-                dbc.Col(reactive_power_display, width="auto", style={"height": "100%"}),
+                dbc.Col(active_power_display, width="auto"),
+                dbc.Col(active_power_from_wind_display, width="auto"),
+                dbc.Col(reactive_power_display, width="auto"),
                 dbc.Col(wind_speed_information, width="auto"),
+                dbc.Col(blade_angle_display, width="auto")
             ],
+            style={'marginRight': '10%'},
         ),
     ],
-    # style={"height": "100vh"},
 )
+
+
+def fig_update_layout(fig):
+    fig.update_layout(
+        xaxis=dict(
+            showline=False,
+            showgrid=False,
+            showticklabels=True,
+            zeroline=False,
+            gridcolor="#636363",
+            linecolor="rgb(204, 204, 204)",
+            linewidth=2,
+            tickfont=dict(
+                family="Arial",
+                size=12,
+                color="white",
+            ),
+            title=dict(
+                font=dict(family="Arial", size=24, color="#fec036"),
+            ),
+        ),
+        yaxis=dict(
+            showline=False,
+            showgrid=False,
+            showticklabels=True,
+            zeroline=False,
+            gridcolor="#636363",
+            linecolor="rgb(204, 204, 204)",
+            linewidth=2,
+            tickfont=dict(
+                family="Arial",
+                size=12,
+                color="white",
+            ),
+            title=dict(
+                font=dict(family="Arial", size=24, color="#fec036"),
+            ),
+        ),
+        autosize=True,
+        margin=dict(autoexpand=True, l=50, b=40, r=35, t=30),
+        showlegend=False,
+        paper_bgcolor="black",
+        plot_bgcolor="black",
+        title=dict(
+            font=dict(family="Arial", size=32, color="darkgray"),
+            xanchor="center",
+            yanchor="top",
+            y=1,
+            x=0.5,
+        ),
+    )
+    return fig
 
 
 @app.callback(
     Output("Main-Graph", "figure"),
     [
-        Input("feature-dropdown", "value"),  # Can value be called selected_column?
+        Input("feature-dropdown", "value"),
         Input("date-picker", "start_date"),
         Input("date-picker", "end_date"),
+        Input("get-new-info-button", "n_clicks")
     ],
 )
-def update_graph(selected_column, start_date, end_date):
-    if selected_column in list(df):
-        if start_date and end_date:
-            start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
-            end_date_object = datetime.strptime(end_date, "%Y-%m-%d")
-            mask = (df["Time"] > start_date_object) & (df["Time"] <= end_date_object)
-            df_within_dates = df.loc[mask]
-            fig = go.Figure(
-                data=[
-                    go.Scatter(
-                        x=df_within_dates["Time"], y=df_within_dates[selected_column]
-                    )
-                ]
-            )
-            fig.update_layout(
-                xaxis=dict(
-                    showline=False,
-                    showgrid=False,
-                    showticklabels=True,
-                    zeroline=False,
-                    gridcolor="#636363",
-                    linecolor="rgb(204, 204, 204)",
-                    linewidth=2,
-                    tickfont=dict(
-                        family="Arial",
-                        size=12,
-                        color="darkgray",
-                    ),
-                    title=dict(
-                        text="Time",
-                        font=dict(family="Arial", size=24, color="darkgray"),
-                    ),
-                ),
-                yaxis=dict(
-                    showline=False,
-                    showgrid=False,
-                    showticklabels=True,
-                    zeroline=False,
-                    gridcolor="#636363",
-                    linecolor="rgb(204, 204, 204)",
-                    linewidth=2,
-                    tickfont=dict(
-                        family="Arial",
-                        size=12,
-                        color="darkgray",
-                    ),
-                    title=dict(
-                        text=selected_column,
-                        font=dict(family="Arial", size=24, color="darkgray"),
-                    ),
-                ),
-                autosize=True,
-                margin=dict(autoexpand=True, l=50, b=40, r=35, t=30),
-                showlegend=False,
-                paper_bgcolor="#2b2b2b",  # plot_bgcolor="#2b2b2b",
-                plot_bgcolor="#2b2b2b",  # paper_bgcolor="#2b2b2b",
-                title=dict(
-                    text=selected_column,
-                    font=dict(family="Arial", size=32, color="darkgray"),
-                    xanchor="center",
-                    yanchor="top",
-                    y=1,
-                    x=0.5,
-                ),
-            )
-            return fig
-        elif start_date:
-            start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
-            mask = df["Time"] > start_date_object
-            df_within_dates = df.loc[mask]
-            fig = go.Figure(
-                data=[
-                    go.Scatter(
-                        x=df_within_dates["Time"], y=df_within_dates[selected_column]
-                    )
-                ]
-            )
-            fig.update_layout(
-                xaxis=dict(
-                    showline=False,
-                    showgrid=False,
-                    showticklabels=True,
-                    zeroline=False,
-                    gridcolor="#636363",
-                    linecolor="rgb(204, 204, 204)",
-                    linewidth=2,
-                    tickfont=dict(
-                        family="Arial",
-                        size=12,
-                        color="darkgray",
-                    ),
-                    title=dict(
-                        text="Time",
-                        font=dict(family="Arial", size=24, color="darkgray"),
-                    ),
-                ),
-                yaxis=dict(
-                    showline=False,
-                    showgrid=False,
-                    showticklabels=True,
-                    zeroline=False,
-                    gridcolor="#636363",
-                    linecolor="rgb(204, 204, 204)",
-                    linewidth=2,
-                    tickfont=dict(
-                        family="Arial",
-                        size=12,
-                        color="darkgray",
-                    ),
-                    title=dict(
-                        text=selected_column,
-                        font=dict(family="Arial", size=24, color="darkgray"),
-                    ),
-                ),
-                autosize=True,
-                margin=dict(autoexpand=True, l=50, b=40, r=35, t=30),
-                showlegend=False,
-                paper_bgcolor="#2b2b2b",  # plot_bgcolor="#2b2b2b",
-                plot_bgcolor="#2b2b2b",  # paper_bgcolor="#2b2b2b",
-                title=dict(
-                    text=selected_column,
-                    font=dict(family="Arial", size=32, color="darkgray"),
-                    xanchor="center",
-                    yanchor="top",
-                    y=1,
-                    x=0.5,
-                ),
-            )
-            return fig
+def update_graph(selected_column, start_date, end_date, n_info):
+    if n_info is None:
+        if selected_column in list(df):
+            if start_date and end_date:
+                start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
+                end_date_object = datetime.strptime(end_date, "%Y-%m-%d")
+                mask = (df.index > start_date_object) & (df.index <= end_date_object)
+                df_within_dates = df.loc[mask]
+                fig = go.Figure(
+                    data=[
+                        go.Scatter(
+                            x=df_within_dates.index, y=df_within_dates[selected_column]
+                        )
+                    ]
+                )
+                fig = fig_update_layout(fig)
+                return fig
+            elif start_date:
+                start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
+                mask = df.index > start_date_object
+                df_within_dates = df.loc[mask]
+                fig = go.Figure(
+                    data=[
+                        go.Scatter(
+                            x=df_within_dates.index, y=df_within_dates[selected_column]
+                        )
+                    ]
+                )
+                fig = fig_update_layout(fig)
+                return fig
+            else:
+                fig = go.Figure(data=[go.Scatter(x=df.index, y=df[selected_column])])
+                fig = fig_update_layout(fig)
+                return fig
         else:
-            fig = go.Figure(data=[go.Scatter(x=df["Time"], y=df[selected_column])])
-            fig.update_layout(
-                xaxis=dict(
-                    showline=False,
-                    showgrid=False,
-                    showticklabels=True,
-                    zeroline=False,
-                    gridcolor="#636363",
-                    linecolor="rgb(204, 204, 204)",
-                    linewidth=2,
-                    tickfont=dict(
-                        family="Arial",
-                        size=12,
-                        color="darkgray",
-                    ),
-                    title=dict(
-                        text="Time",
-                        font=dict(family="Arial", size=24, color="darkgray"),
-                    ),
-                ),
-                yaxis=dict(
-                    showline=False,
-                    showgrid=False,
-                    showticklabels=True,
-                    zeroline=False,
-                    gridcolor="#636363",
-                    linecolor="rgb(204, 204, 204)",
-                    linewidth=2,
-                    tickfont=dict(
-                        family="Arial",
-                        size=12,
-                        color="darkgray",
-                    ),
-                    title=dict(
-                        text=selected_column,
-                        font=dict(family="Arial", size=24, color="darkgray"),
-                    ),
-                ),
-                autosize=True,
-                margin=dict(autoexpand=True, l=50, b=40, r=35, t=30),
-                showlegend=False,
-                paper_bgcolor="#2b2b2b",  # plot_bgcolor="#2b2b2b",
-                plot_bgcolor="#2b2b2b",  # paper_bgcolor="#2b2b2b",
-                title=dict(
-                    text=selected_column,
-                    font=dict(family="Arial", size=32, color="darkgray"),
-                    xanchor="center",
-                    yanchor="top",
-                    y=1,
-                    x=0.5,
-                ),
-            )
+            fig = go.Figure()
+            fig = fig_update_layout(fig)
             return fig
     else:
-        fig = go.Figure()
-        fig.update_layout(
-            xaxis=dict(
-                showline=False,
-                showgrid=False,
-                showticklabels=True,
-                zeroline=False,
-                gridcolor="#636363",
-                linecolor="rgb(204, 204, 204)",
-                linewidth=2,
-                tickfont=dict(
-                    family="Arial",
-                    size=12,
-                    color="darkgray",
-                ),
-                title=dict(
-                    text="Time",
-                    font=dict(family="Arial", size=24, color="darkgray"),
-                ),
-            ),
-            yaxis=dict(
-                showline=False,
-                showgrid=False,
-                showticklabels=True,
-                zeroline=False,
-                gridcolor="#636363",
-                linecolor="rgb(204, 204, 204)",
-                linewidth=2,
-                tickfont=dict(
-                    family="Arial",
-                    size=12,
-                    color="darkgray",
-                ),
-                title=dict(
-                    text=selected_column,
-                    font=dict(family="Arial", size=24, color="darkgray"),
-                ),
-            ),
-            autosize=True,
-            margin=dict(autoexpand=True, l=50, b=40, r=35, t=30),
-            showlegend=False,
-            paper_bgcolor="#2b2b2b",  # plot_bgcolor="#2b2b2b",
-            plot_bgcolor="#2b2b2b",  # paper_bgcolor="#2b2b2b",
-            title=dict(
-                text=selected_column,
-                font=dict(family="Arial", size=32, color="darkgray"),
-                xanchor="center",
-                yanchor="top",
-                y=1,
-                x=0.5,
-            ),
-        )
-        return fig
+        if selected_column in list(df_button):
+            if start_date and end_date:
+                start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
+                end_date_object = datetime.strptime(end_date, "%Y-%m-%d")
+                mask = (df_button.index > start_date_object) & (df_button.index <= end_date_object)
+                df_within_dates = df_button.loc[mask]
+                fig = go.Figure(
+                    data=[
+                        go.Scatter(
+                            x=df_within_dates.index,
+                            y=df_within_dates[selected_column]
+                        )
+                    ]
+                )
+                fig = fig_update_layout(fig)
+                return fig
+            elif start_date:
+                start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
+                mask = df_button.index > start_date_object
+                df_within_dates = df_button.loc[mask]
+                fig = go.Figure(
+                    data=[
+                        go.Scatter(
+                            x=df_within_dates.index, y=df_within_dates[selected_column]
+                        )
+                    ]
+                )
+                fig = fig_update_layout(fig)
+                return fig
+            else:
+                fig = go.Figure(data=[go.Scatter(x=df_button.index,
+                                                 y=df_button[selected_column])])
+                fig = fig_update_layout(fig)
+                return fig
+        else:
+            fig = go.Figure()
+            fig = fig_update_layout(fig)
+            return fig
 
 
 @app.callback(
     [Output('active-power-information-gauge', 'value'),
      Output('active-power-from-wind-information-gauge', 'value'),
      Output('wind-power-information-gauge', 'value'),
-     Output('reactive-power-information-gauge', 'value')],
+     Output('reactive-power-information-gauge', 'value'),
+     Output('blade-angle-information-gauge', 'value')
+     ],
     Input('Main-Graph', 'clickData')
 )
 def display_click_data(clickData):
     if clickData:
         data_time = clickData['points'][0]['x']
-        value_active_power = df['WEC: ava. Power'].loc[df['Time'] == data_time].values[0]
-        value_active_power_wind = df['WEC: ava. available P from wind'].loc[df['Time'] == data_time].values[0]
-        value_reactive_power = df['WEC: ava. reactive Power'].loc[df['Time'] == data_time].values[0]
-        value_wind_speed = df['WEC: ava. windspeed'].loc[df['Time'] == data_time].values[0]
-        return value_active_power, value_active_power_wind, value_wind_speed, value_reactive_power
+        value_active_power = df['WEC: ava. Power'].loc[df.index == data_time].values[0]
+        value_active_power_wind = df['WEC: ava. available P from wind'].loc[df.index == data_time].values[0]
+        value_reactive_power = df['WEC: ava. reactive Power'].loc[df.index == data_time].values[0]
+        value_wind_speed = df['WEC: ava. windspeed'].loc[df.index == data_time].values[0]
+        value_blade_angle = df['WEC: ava. blade angle A'].loc[df.index == data_time].values[0]
+        return value_active_power, value_active_power_wind, value_wind_speed, value_reactive_power, value_blade_angle
     else:
         value_active_power = 0
         value_active_power_wind = 0
         value_reactive_power = 0
         value_wind_speed = 0
-        return value_active_power, value_active_power_wind, value_wind_speed, value_reactive_power
+        value_blade_angle = 0
+        return value_active_power, value_active_power_wind, value_wind_speed, value_reactive_power, value_blade_angle
+
+
+@app.callback(
+    [Output("rul-estimation-indicator-led", "value"),
+     Output("Info-Textbox", "value")],
+    Input("predict-button", "n_clicks"),
+    [State('get-new-info-button', "n_clicks")]
+)
+def predict_rul(n_pred, n_get_info):
+    if n_pred:
+        if n_get_info is None:
+            value_rul = 123456.7
+            information_update = "We need to get new data. Please, click on 'Get New Data'."
+            return value_rul, information_update
+        else:
+            model = pickle.load(open("assets/xgb_reg.pkl", "rb"))
+            y_pred = model.predict(x_test)
+            df_out = pd.DataFrame()
+            df_out['pred'] = y_pred
+            value_rul = int(max(df_out['pred']))
+            information_update = "RUL is estimated based on the readings for the last week."
+            return value_rul, information_update
+    else:
+        value_rul = 123456.7
+        information_update = "This field is used to display information about a feature displayed " \
+                             "on the graph and estimated RUL. In order to estimate the RUL, use " \
+                             "the button 'Get New Data' and then, 'Predict'. The estimated RUL will be " \
+                             "printed."
+        return value_rul, information_update
 
 
 if __name__ == "__main__":
