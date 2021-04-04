@@ -8,7 +8,7 @@ def data_preprocessing():
     df = pd.read_csv("data/SCADA_data.csv")
     status_data_wec = pd.read_csv("data/status_data_wec.csv")
 
-    df["Inverter avg."] = df[
+    df["Inverter avg. temp"] = df[
         [
             "CS101 : Sys 1 inverter 1 cabinet temp.",
             "CS101 : Sys 1 inverter 2 cabinet temp.",
@@ -23,7 +23,7 @@ def data_preprocessing():
             "CS101 : Sys 2 inverter 4 cabinet temp.",
         ]
     ].mean(axis=1)
-    df["Inverter std"] = df[
+    df["Inverter std. temp"] = df[
         [
             "CS101 : Sys 1 inverter 1 cabinet temp.",
             "CS101 : Sys 1 inverter 2 cabinet temp.",
