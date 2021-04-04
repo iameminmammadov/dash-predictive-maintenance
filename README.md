@@ -38,4 +38,4 @@ To run this app:
 ```
 python app.py
 ```
-The app will be run on 127.0.0.1:8050.
+The app will be run on  http://127.0.0.1:8050/.
