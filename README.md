@@ -18,8 +18,8 @@
 ## Requirements
 Clone this repo and create a clean environment:
 ```
-git clone https://github.com/plotly/dash-sample-apps.git
-cd dash-sample-apps/apps/dash-manufacture-spc-dashboard/
+git clone https://github.com/iameminmammadov/dash-predictive-maintenance.git
+cd dash-predictive-maintenance
 python3 -m virtualenv venv
 ```
 To activate the virtualenv in UNIX:
