@@ -32,7 +32,7 @@ venv\Scripts\activate
 ```
 To install the libraries, needed to run this dashboard:
 ```
-pip install -r requirements.txt
+pip install -r requirements-predeploy.txt
 ```
 To run this app:
 ```
