@@ -14,7 +14,7 @@ import pickle
 app = dash.Dash(
     __name__,
     meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
-    external_stylesheets=[dbc.themes.SUPERHERO],
+    external_stylesheets=[dbc.themes.CYBORG],
 )
 server = app.server
 app.title = "Predictive Maintenance Dashboard"
@@ -27,8 +27,8 @@ def logo(app):
     )
 
     info_about_app = html.H6(
-        "This Dashboard is focused on estimating the Remaining Useful Life (RUL) in wind turbines. RUL is defined "
-        " as the time until the next fault.",
+        "This Dashboard is focused on estimating the Remaining Useful Life (RUL) in wind turbines via Machine Learning."
+        " RUL is defined as the time until the next fault and estimated via XGBoost algorithm.",
         style={"marginLeft": "10px"},
     )
 
@@ -42,7 +42,7 @@ def logo(app):
     )
 
 
-df, df_button, x_test, y_test = data_preprocessing()
+df, df_button, x_test, y_test, x_train = data_preprocessing()
 
 predict_button = dbc.Card(
     className="mt-auto",
@@ -54,7 +54,8 @@ predict_button = dbc.Card(
                         dbc.Button(
                             "Predict",
                             id="predict-button",
-                            color="#fec036",
+                            color="primary",
+                            outline=True,
                             size="lg",
                             style={"color": "#fec036"},
                         ),
@@ -85,7 +86,8 @@ get_new_information_button = dbc.Card(
                         dbc.Button(
                             "Get New Data",
                             id="get-new-info-button",
-                            color="#fec036",
+                            color="primary",
+                            outline=True,
                             size="lg",
                             style={"color": "#fec036"},
                         ),
@@ -105,7 +107,6 @@ get_new_information_button = dbc.Card(
         )
     ],
 )
-
 
 graphs = dbc.Card(
     children=[
@@ -157,9 +158,9 @@ graphs = dbc.Card(
                     [
                         dcc.DatePickerRange(
                             id="date-picker",
-                            min_date_allowed=date(2014, 5, 1),  # need to change this
-                            max_date_allowed=date(2015, 4, 9),
-                            initial_visible_month=date(2014, 5, 1),
+                            min_date_allowed=x_train.index[0],  # need to change this
+                            max_date_allowed=x_train.index[-1],
+                            initial_visible_month=x_train.index[0],
                             start_date_placeholder_text="Start Period",
                             end_date_placeholder_text="End Period",
                             calendar_orientation="vertical",
@@ -241,6 +242,7 @@ info_box = dbc.Card(
                             "placeholder": "#fec036",
                             "fontFamily": "Arial",
                             "fontSize": "16",
+                            "padding": "12px",
                             "display": "inline-block",
                         },
                     )
@@ -277,7 +279,7 @@ blade_angle_display = dbc.Card(
                         min=min(df["WEC: ava. blade angle A"]),
                         max=max(
                             df["WEC: ava. blade angle A"]
-                        ),  # This one should be the theoretical maximum
+                        ),
                         value=0,
                         showCurrentValue=True,
                         color="#fec036",
@@ -519,49 +521,52 @@ reactive_power_display = dbc.Card(
 )
 
 gauge_size = "auto"
+sidebar_size = 12
+graph_size = 10
 app.layout = dbc.Container(
     fluid=True,
     children=[
         logo(app),
         dbc.Row(
             [
-                dbc.Col(graphs,
-                        xs=10,
-                        md=10,
-                        lg=10,
-                        width=10),
                 dbc.Col(
                     [
                         dbc.Row(dbc.Col(rul_estimation_indicator,
-                                        xs=12,
-                                        md=12,
-                                        lg=12,
-                                        width=12)
+                                        xs=sidebar_size,
+                                        md=sidebar_size,
+                                        lg=sidebar_size,
+                                        width=sidebar_size)
                                 ),
                         dbc.Row(dbc.Col(info_box,
-                                        xs=12,
-                                        md=12,
-                                        lg=12,
-                                        width=12)
+                                        xs=sidebar_size,
+                                        md=sidebar_size,
+                                        lg=sidebar_size,
+                                        width=sidebar_size)
                                 ),
                         dbc.Row(dbc.Col(get_new_information_button,
-                                        xs=12,
-                                        md=12,
-                                        lg=12,
-                                        width=12)
+                                        xs=sidebar_size,
+                                        md=sidebar_size,
+                                        lg=sidebar_size,
+                                        width=sidebar_size)
                                 ),
                         dbc.Row(dbc.Col(predict_button,
-                                        xs=12,
-                                        md=12,
-                                        lg=12,
-                                        width=12)
+                                        xs=sidebar_size,
+                                        md=sidebar_size,
+                                        lg=sidebar_size,
+                                        width=sidebar_size)
                                 ),
                     ]
-                )
+                ),
+                dbc.Col(graphs,
+                        xs=graph_size,
+                        md=graph_size,
+                        lg=graph_size,
+                        width=graph_size)
             ],
-            justify='start',
-            style={"display": "flex",
-                   "marginBottom": "-3%"
+            # justify='start',
+            style={
+                "display": "flex",
+                "marginBottom": "-3%"
                    },
         ),
         dbc.Row(
@@ -592,6 +597,7 @@ app.layout = dbc.Container(
                         lg=gauge_size,
                         width=gauge_size),
             ],
+            justify='end',
             style={
                 "marginTop": "3%"
             },
@@ -610,8 +616,8 @@ def fig_update_layout(fig):
             gridcolor="#636363",
             linecolor="rgb(204, 204, 204)",
             linewidth=2,
-            tickfont=dict(family="Arial", size=12, color="white",),
-            title=dict(font=dict(family="Arial", size=24, color="#fec036"),),
+            tickfont=dict(family="Arial", size=12, color="white", ),
+            title=dict(font=dict(family="Arial", size=24, color="#fec036"), ),
         ),
         yaxis=dict(
             showline=False,
@@ -621,8 +627,8 @@ def fig_update_layout(fig):
             gridcolor="#636363",
             linecolor="rgb(204, 204, 204)",
             linewidth=2,
-            tickfont=dict(family="Arial", size=12, color="white",),
-            title=dict(font=dict(family="Arial", size=24, color="#fec036"),),
+            tickfont=dict(family="Arial", size=12, color="white", ),
+            title=dict(font=dict(family="Arial", size=24, color="#fec036"), ),
         ),
         autosize=True,
         margin=dict(autoexpand=True, l=50, b=40, r=35, t=30),
@@ -669,7 +675,7 @@ def update_graph(selected_column, start_date, end_date, n_get_new_info, n_pred):
                     start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
                     end_date_object = datetime.strptime(end_date, "%Y-%m-%d")
                     mask = (df.index > start_date_object) & (
-                        df.index <= end_date_object
+                            df.index <= end_date_object
                     )
                     df_within_dates = df.loc[mask]
                     fig = go.Figure(
@@ -703,94 +709,42 @@ def update_graph(selected_column, start_date, end_date, n_get_new_info, n_pred):
                     fig = fig_update_layout(fig)
                     return fig, value_rul, information_update
             else:
-                fig = go.Figure()
+                fig = go.Figure(
+                    data=[go.Scatter(x=df.index, y=df["WEC: ava. windspeed"])]
+                )
                 fig = fig_update_layout(fig)
                 return fig, value_rul, information_update
         else:
+            _information_update = (
+                            "New information is received for the last week and covers periods from "
+                            + str(df_button.index[0])
+                            + " to "
+                            + str(df_button.index[-1])
+                            + ". To predict"
+                              " RUL, use 'Predict' button. To view data for the aforementioned period, choose"
+                              " appropriate dates on the calendar."
+            )
             if selected_column in list(df_button):
-                if start_date and end_date:
-                    start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
-                    end_date_object = datetime.strptime(end_date, "%Y-%m-%d")
-                    mask = (df_button.index > start_date_object) & (
-                        df_button.index <= end_date_object
-                    )
-                    df_within_dates = df_button.loc[mask]
-                    fig = go.Figure(
-                        data=[
-                            go.Scatter(
-                                x=df_within_dates.index,
-                                y=df_within_dates[selected_column],
-                            )
-                        ]
-                    )
-                    fig = fig_update_layout(fig)
-                    _information_update = (
-                        "New information is received for the last week and covers periods from "
-                        + str(df_button.index[0])
-                        + " to "
-                        + str(df_button.index[-1])
-                        + ". To predict"
-                        " RUL, use 'Predict' button. To view data for the aforementioned period, choose"
-                        " appropriate dates on the calendar."
-                    )
-                    return fig, value_rul, _information_update
-                elif start_date:
-                    start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
-                    mask = df_button.index > start_date_object
-                    df_within_dates = df_button.loc[mask]
-                    fig = go.Figure(
-                        data=[
-                            go.Scatter(
-                                x=df_within_dates.index,
-                                y=df_within_dates[selected_column],
-                            )
-                        ]
-                    )
-                    fig = fig_update_layout(fig)
-                    _information_update = (
-                        "New information is received for the last week and covers periods from "
-                        + str(df_button.index[0])
-                        + " to "
-                        + str(df_button.index[-1])
-                        + ". To predict"
-                        " RUL, use 'Predict' button. To view data for the aforementioned period, choose"
-                        " appropriate dates on the calendar."
-                    )
-                    return fig, value_rul, _information_update
-                else:
-                    fig = go.Figure(
-                        data=[
-                            go.Scatter(x=df_button.index, y=df_button[selected_column])
-                        ]
-                    )
-                    fig = fig_update_layout(fig)
-                    _information_update = (
-                        "New information is received for the last week and covers periods from "
-                        + str(df_button.index[0])
-                        + " to "
-                        + str(df_button.index[-1])
-                        + ". To predict"
-                        " RUL, use 'Predict' button. To view data for the aforementioned period, choose"
-                        " appropriate dates on the calendar."
-                    )
-                    return fig, value_rul, _information_update
-            else:
-                fig = go.Figure()
-                fig = fig_update_layout(fig)
-                _information_update = (
-                    "New information is received for the last week and covers periods from "
-                    + str(df_button.index[0])
-                    + " to "
-                    + str(df_button.index[-1])
-                    + ". To predict"
-                    " RUL, use 'Predict' button. To view data for the aforementioned period, choose"
-                    " appropriate dates on the calendar."
+                fig = go.Figure(
+                    data=[
+                        go.Scatter(x=df_button.index, y=df_button[selected_column])
+                    ]
                 )
+                fig = fig_update_layout(fig)
                 return fig, value_rul, _information_update
-    else:
+            else:
+                fig = go.Figure(
+                    data=[
+                        go.Scatter(x=df_button.index, y=df_button["WEC: ava. windspeed"])
+                    ]
+                )
+                fig = fig_update_layout(fig)
+                return fig, value_rul, _information_update
+    else:  # Prediction button is pressed
         if n_get_new_info is None:
             value_rul = 0.0
-            information_update = "To predict RUL, please use 'Get New Data' button."
+            information_update = " 'Predict' button will not produce a desired result until new information is received." \
+                                 " To predict RUL, please use 'Get New Data' button."
             if selected_column in list(df):
                 if start_date and end_date:
                     start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
@@ -825,11 +779,14 @@ def update_graph(selected_column, start_date, end_date, n_get_new_info, n_pred):
                     return fig, value_rul, information_update
                 else:
                     fig = go.Figure(
-                        data=[go.Scatter(x=df.index, y=df[selected_column])]
-                    )
+                                data=[go.Scatter(x=df.index, y=df[selected_column])]
+                            )
+                    fig = fig_update_layout(fig)
                     return fig, value_rul, information_update
             else:
-                fig = go.Figure()
+                fig = go.Figure(
+                            data=[go.Scatter(x=df.index, y=df["WEC: ava. windspeed"])]
+                        )
                 fig = fig_update_layout(fig)
                 return fig, value_rul, information_update
         else:
@@ -843,48 +800,23 @@ def update_graph(selected_column, start_date, end_date, n_get_new_info, n_pred):
             ) + " to " + str(
                 x_test.index[-1]
             )
+            start_date = df_button.index[0]
+            end_date = df_button.index[-1]
             if selected_column in list(df_button):
-                if start_date and end_date:
-                    start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
-                    end_date_object = datetime.strptime(end_date, "%Y-%m-%d")
-                    mask = (df_button.index > start_date_object) & (
-                        df_button.index <= end_date_object
-                    )
-                    df_within_dates = df_button.loc[mask]
-                    fig = go.Figure(
-                        data=[
-                            go.Scatter(
-                                x=df_within_dates.index,
-                                y=df_within_dates[selected_column],
-                            )
+                fig = go.Figure(
+                    data=[
+                        go.Scatter(
+                            x=df_button.index,
+                            y=df_button[selected_column],
+                        )
                         ]
-                    )
-                    fig = fig_update_layout(fig)
-                    return fig, value_rul, information_update
-                elif start_date:
-                    start_date_object = datetime.strptime(start_date, "%Y-%m-%d")
-                    mask = df_button.index > start_date_object
-                    df_within_dates = df_button.loc[mask]
-                    fig = go.Figure(
-                        data=[
-                            go.Scatter(
-                                x=df_within_dates.index,
-                                y=df_within_dates[selected_column],
-                            )
-                        ]
-                    )
-                    fig = fig_update_layout(fig)
-                    return fig, value_rul, information_update
-                else:
-                    fig = go.Figure(
-                        data=[
-                            go.Scatter(x=df_button.index, y=df_button[selected_column])
-                        ]
-                    )
-                    fig = fig_update_layout(fig)
-                    return fig, value_rul, information_update
+                )
+                fig = fig_update_layout(fig)
+                return fig, value_rul, information_update
             else:
-                fig = go.Figure()
+                fig = go.Figure(
+                    data=[go.Scatter(x=df.index, y=df_button["WEC: ava. windspeed"])]
+                )
                 fig = fig_update_layout(fig)
                 return fig, value_rul, information_update
 
@@ -935,6 +867,7 @@ def display_click_data(clickData):
             value_reactive_power,
             value_blade_angle,
         )
+
 
 if __name__ == "__main__":
     app.run_server(debug=True, use_reloader=True)
