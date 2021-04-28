@@ -120,4 +120,5 @@ def data_preprocessing():
 
     df_test = x_test.iloc[:, : df.shape[1]]
 
-    return df, df_test, x_test, y_test
+    return df, df_test, x_test, y_test, x_train
+
